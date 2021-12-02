@@ -10,5 +10,6 @@ def get_network(cfg):
     arch = cfg.network
     get_model = _network_factory[arch]
     network = get_model()
+    print('run networks/ct_pvnet/__init__.py-get_network,task:%s' % (cfg.task))
     return network
 

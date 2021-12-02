@@ -218,8 +218,9 @@ def run_render():
 def run_custom():
     from tools import handle_custom_dataset
     data_root = 'data/custom'
-    handle_custom_dataset.sample_fps_points(data_root)
-    handle_custom_dataset.custom_to_coco(data_root)
+    #handle_custom_dataset.sample_fps_points(data_root)
+    handle_custom_dataset.custom_to_coco(data_root, gen_train_file=True)
+    handle_custom_dataset.custom_to_coco(data_root, gen_train_file=False)
 
 
 def run_detector_pvnet():
@@ -272,6 +273,31 @@ def run_demo():
             output = network(inp)
         visualizer.visualize_demo(output, inp, meta)
 
+
+def run_mytest():
+    from lib.networks import make_network
+    from lib.datasets import make_data_loader
+    from lib.utils.net_utils import load_network
+    import tqdm
+    import torch
+    from lib.visualizers import make_visualizer
+
+    network = make_network(cfg).cuda()
+    load_network(network, cfg.model_dir, resume=cfg.resume, epoch=cfg.test.epoch)
+    network.eval()
+
+    data_loader = make_data_loader(cfg, is_train=False)
+    visualizer = make_visualizer(cfg)
+    for batch in tqdm.tqdm(data_loader):
+        for k in batch:
+            if k != 'meta':
+                batch[k] = batch[k].cuda()
+        with torch.no_grad():
+            output = network(batch['inp'], batch)
+        visualizer.visualize(output, batch)
+
+
 if __name__ == '__main__':
-    globals()['run_'+args.type]()
+    run_custom()
+#    globals()['run_'+args.type]()
 

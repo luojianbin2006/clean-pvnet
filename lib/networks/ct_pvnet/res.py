@@ -21,7 +21,8 @@ def _crop(img, box, trans_output_inv, output):
 
     img = img.astype(np.uint8).copy()
     inp = cv2.warpAffine(img, trans_input, (input_w, input_h), flags=cv2.INTER_LINEAR)
-
+    cv2.imshow('inp',inp)
+    #cv2.waitKey(0)
     inp = (inp.astype(np.float32) / 255.)
     inp = (inp - tless_config.mean) / tless_config.std
     inp = inp.transpose(2, 0, 1)
@@ -85,5 +86,6 @@ class Network(nn.Module):
 
 
 def get_network():
+    print('run networks/ct_pvnet/res.py-get_network,task:%s' % (cfg.task))
     network = Network()
     return network

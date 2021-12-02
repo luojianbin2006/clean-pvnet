@@ -40,21 +40,33 @@ def get_model_corners(model):
     return corners_3d
 
 
-def record_ann(model_meta, img_id, ann_id, images, annotations):
+def record_ann(model_meta, img_id, ann_id, images, annotations,istrain=True):
     data_root = model_meta['data_root']
     corner_3d = model_meta['corner_3d']
     center_3d = model_meta['center_3d']
     fps_3d = model_meta['fps_3d']
     K = model_meta['K']
 
-    pose_dir = os.path.join(data_root, 'pose')
-    rgb_dir = os.path.join(data_root, 'rgb')
-    mask_dir = os.path.join(data_root, 'mask')
+    if istrain:
+        pose_dir = os.path.join(data_root, 'train_data/pose')
+        rgb_dir = os.path.join(data_root, 'train_data/rgb')
+        mask_dir = os.path.join(data_root, 'train_data/mask')
+    else:
+        pose_dir = os.path.join(data_root, 'test_data/pose')
+        rgb_dir = os.path.join(data_root, 'test_data/rgb')
+        mask_dir = os.path.join(data_root, 'test_data/mask')
+
+    rgb_names=os.listdir(rgb_dir)
+    pose_names = os.listdir(pose_dir)
+    mask_names = os.listdir(mask_dir)
 
     inds = range(len(os.listdir(rgb_dir)))
 
     for ind in tqdm.tqdm(inds):
-        rgb_path = os.path.join(rgb_dir, '{}.jpg'.format(ind))
+        #rgb_path = os.path.join(rgb_dir, 'rgb-{}.jpg'.format(ind))
+        rgb_path = os.path.join(rgb_dir, rgb_names[ind])
+
+        num = rgb_names[ind].split('-')[1].split('.')[0]
 
         rgb = Image.open(rgb_path)
         img_size = rgb.size
@@ -62,13 +74,21 @@ def record_ann(model_meta, img_id, ann_id, images, annotations):
         info = {'file_name': rgb_path, 'height': img_size[1], 'width': img_size[0], 'id': img_id}
         images.append(info)
 
-        pose_path = os.path.join(pose_dir, 'pose{}.npy'.format(ind))
+        #pose_path = os.path.join(pose_dir, 'pose-{}.npy'.format(ind))
+        pose_path = os.path.join(pose_dir, 'pose-%s.npy' % num)
+        if not os.path.isfile(pose_path):
+            print(pose_path + ' not exist\n')
         pose = np.load(pose_path)
+        if pose.shape[0]==4:
+            pose = pose[:3,:]
         corner_2d = base_utils.project(corner_3d, K, pose)
         center_2d = base_utils.project(center_3d[None], K, pose)[0]
         fps_2d = base_utils.project(fps_3d, K, pose)
 
-        mask_path = os.path.join(mask_dir, '{}.png'.format(ind))
+        #mask_path = os.path.join(mask_dir, 'sem-{}.png'.format(ind))
+        mask_path = os.path.join(mask_dir, 'sem-%s.png' % num)
+        if not os.path.isfile(mask_path):
+            print(mask_path + ' not exist\n')
 
         ann_id += 1
         anno = {'mask_path': mask_path, 'image_id': img_id, 'category_id': 1, 'id': ann_id}
@@ -83,7 +103,7 @@ def record_ann(model_meta, img_id, ann_id, images, annotations):
     return img_id, ann_id
 
 
-def custom_to_coco(data_root):
+def custom_to_coco(data_root,gen_train_file=True):
     model_path = os.path.join(data_root, 'model.ply')
 
     renderer = OpenGLRenderer(model_path)
@@ -107,10 +127,15 @@ def custom_to_coco(data_root):
     images = []
     annotations = []
 
-    img_id, ann_id = record_ann(model_meta, img_id, ann_id, images, annotations)
+    img_id, ann_id = record_ann(model_meta, img_id, ann_id, images, annotations,istrain=gen_train_file)
+
     categories = [{'supercategory': 'none', 'id': 1, 'name': 'cat'}]
     instance = {'images': images, 'annotations': annotations, 'categories': categories}
 
-    anno_path = os.path.join(data_root, 'train.json')
+    if gen_train_file:
+        jsonfile='train.json'
+    else:
+        jsonfile = 'test.json'
+    anno_path = os.path.join(data_root, jsonfile)
     with open(anno_path, 'w') as f:
         json.dump(instance, f)

@@ -11,7 +11,9 @@ if cfg.test.icp:
 from PIL import Image
 from lib.utils.img_utils import read_depth
 from scipy import spatial
-
+from lib.utils import data_utils
+import cv2
+import copy
 
 class Evaluator:
 
@@ -19,6 +21,8 @@ class Evaluator:
         self.result_dir = result_dir
         args = DatasetCatalog.get(cfg.test.dataset)
         self.ann_file = args['ann_file']
+        print('cfg.test.dataset:%s' % cfg.test.dataset)
+        print('self.ann_file:%s' % self.ann_file)
         self.coco = coco.COCO(self.ann_file)
 
         data_root = args['data_root']
@@ -91,6 +95,28 @@ class Evaluator:
         anno = self.coco.loadAnns(self.coco.getAnnIds(imgIds=img_id))[0]
         kpt_3d = np.concatenate([anno['fps_3d'], [anno['center_3d']]], axis=0)
         K = np.array(anno['K'])
+
+        do_crop = bool(batch['do_crop'][0])
+        trans_input =batch['trans_input'][0].cpu().numpy()
+        trans_input_inv = batch['trans_input_inv'][0].cpu().numpy()
+        kpt_2d_ = batch['kpt_2d'][0].cpu().numpy()
+        path = self.coco.loadImgs(int(img_id))[0]['file_name'] = self.coco.loadImgs(int(img_id))[0]['file_name']
+        img_org = Image.open(path)
+        uncrop_kpt_2d_gt = copy.deepcopy(kpt_2d_)
+        uncrop_kpt_2d_pre = copy.deepcopy(kpt_2d)
+        if do_crop:
+            for i, p in enumerate(kpt_2d_):
+                uncrop_kpt_2d_gt[i] = data_utils.affine_transform(p, trans_input_inv)
+            for i, p in enumerate(kpt_2d):
+                uncrop_kpt_2d_pre[i] = data_utils.affine_transform(p, trans_input_inv)
+                kpt_2d[i]=uncrop_kpt_2d_pre[i]
+
+        img_org_cv = cv2.cvtColor(np.asarray(img_org), cv2.COLOR_RGB2BGR)
+        for i in range(kpt_2d_.shape[0]):
+            cv2.circle(img_org_cv, tuple(uncrop_kpt_2d_gt[i].astype('int')), radius=1, color=(0, 255, 0), thickness=2)
+            cv2.circle(img_org_cv, tuple(uncrop_kpt_2d_pre[i].astype('int')), radius=1, color=(0, 0, 255), thickness=2)
+        cv2.imshow('img_org_cv', img_org_cv)
+        cv2.waitKey(0)
 
         pose_gt = np.array(anno['pose'])
         pose_pred = pvnet_pose_utils.pnp(kpt_3d, kpt_2d, K)

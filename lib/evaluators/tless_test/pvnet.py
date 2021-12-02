@@ -36,11 +36,14 @@ class Evaluator:
 
         model_dir = 'data/tless/models_cad'
         obj_path = os.path.join(model_dir, 'obj_{:02d}.ply'.format(self.obj_id))
+        print("tless_test: load ply")
         self.model = inout.load_ply(obj_path)
-        self.model_pts = self.model['pts'] / 1000.
+        #self.model_pts = self.model['pts'] / 1000.
+        self.model_pts = self.model['pts']/1000.
 
         model_info = yaml.load(open(os.path.join(model_dir, 'models_info.yml')))
-        self.diameter = model_info[self.obj_id]['diameter'] / 1000.
+        #self.diameter = model_info[self.obj_id]['diameter'] / 1000.
+        self.diameter = model_info[self.obj_id]['diameter']/1000.
 
         self.vsd = []
         self.adi = []

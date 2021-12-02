@@ -62,13 +62,17 @@ def pvnet_transform(img, box):
     trans_input = data_utils.get_affine_transform(center, scale, 0, [input_w, input_h])
     inp = cv2.warpAffine(img, trans_input, (input_w, input_h), flags=cv2.INTER_LINEAR)
 
+    cv2.rectangle(img,(int(box[0]),int(box[1])),(int(box[2]),int(box[3])),(0,0,255))
+    cv2.imshow('img',img)
+    cv2.imshow('inp', inp)
     box = np.array(box).reshape(-1, 2)
     box = data_utils.affine_transform(box, trans_input)
     box = magnify_box(box, tless_config.box_ratio, input_h, input_w)
     new_img = np.zeros_like(inp)
     new_img[box[0, 1]:box[1, 1]+1, box[0, 0]:box[1, 0]+1] = inp[box[0, 1]:box[1, 1]+1, box[0, 0]:box[1, 0]+1]
     inp = new_img
-
+    cv2.imshow('new_img', new_img)
+    #cv2.waitKey(0)
     orig_img = inp.copy()
     inp = (inp.astype(np.float32) / 255.)
 

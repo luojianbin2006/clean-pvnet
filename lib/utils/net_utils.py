@@ -279,9 +279,9 @@ def load_model(net, optim, scheduler, recorder, model_dir, resume=True, epoch=-1
     print('Load model: {}'.format(os.path.join(model_dir, '{}.pth'.format(pth))))
     pretrained_model = torch.load(os.path.join(model_dir, '{}.pth'.format(pth)))
     net.load_state_dict(pretrained_model['net'])
-    optim.load_state_dict(pretrained_model['optim'])
-    scheduler.load_state_dict(pretrained_model['scheduler'])
-    recorder.load_state_dict(pretrained_model['recorder'])
+    #optim.load_state_dict(pretrained_model['optim'])
+    #scheduler.load_state_dict(pretrained_model['scheduler'])
+    #recorder.load_state_dict(pretrained_model['recorder'])
     return pretrained_model['epoch'] + 1
 
 

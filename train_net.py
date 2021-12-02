@@ -1,3 +1,5 @@
+import sys
+sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 from lib.config import cfg, args
 from lib.networks import make_network
 from lib.train import make_trainer, make_optimizer, make_lr_scheduler, make_recorder, set_lr_scheduler
@@ -25,9 +27,11 @@ def train(cfg, network):
 
     for epoch in range(begin_epoch, cfg.train.epoch):
         recorder.epoch = epoch
+
+        # trainer.val(epoch, val_loader, evaluator, recorder)
+
         trainer.train(epoch, train_loader, optimizer, recorder)
         scheduler.step()
-
         if (epoch + 1) % cfg.save_ep == 0:
             save_model(network, optimizer, scheduler, recorder, epoch, cfg.model_dir)
 
@@ -50,7 +54,8 @@ def main():
     if args.test:
         test(cfg, network)
     else:
-        train(cfg, network)
+        test(cfg, network)
+        #train(cfg, network)
 
 
 if __name__ == "__main__":

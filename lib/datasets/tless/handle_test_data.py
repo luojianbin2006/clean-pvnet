@@ -218,7 +218,7 @@ def test_pose_to_coco():
     corner_3d = {i: get_model_corners(v['pts']) / 1000. for i, v in models.items()}
     center_3d = {i: (np.max(v, 0) + np.min(v, 0)) / 2 for i, v in corner_3d.items()}
     fps_3d = {i+1: np.loadtxt('data/tless/farthest/farthest_{:02}.txt'.format(i+1)) for i in range(0, 30)}
-
+    print('handle_test_data:fps_3d')
     model_meta = {
         'corner_3d': corner_3d,
         'center_3d': center_3d,

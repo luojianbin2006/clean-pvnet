@@ -62,11 +62,16 @@ class Resnet18(nn.Module):
         layer.weight.data.normal_(0, 0.01)
         layer.bias.data.zero_()
 
-    def decode_keypoint(self, output):
+    def decode_keypoint(self, output,outside_mask=None):
         vertex = output['vertex'].permute(0, 2, 3, 1)
         b, h, w, vn_2 = vertex.shape
         vertex = vertex.view(b, h, w, vn_2//2, 2)
-        mask = torch.argmax(output['seg'], 1)
+
+        if outside_mask is None:
+            mask = torch.argmax(output['seg'], 1)
+        else:
+            mask = outside_mask
+
         if cfg.test.un_pnp:
             mean = ransac_voting_layer_v3(mask, vertex, 512, inlier_thresh=0.99)
             kpt_2d, var = estimate_voting_distribution_with_mean(mask, vertex, mean)
@@ -75,7 +80,9 @@ class Resnet18(nn.Module):
             kpt_2d = ransac_voting_layer_v3(mask, vertex, 128, inlier_thresh=0.99, max_num=100)
             output.update({'mask': mask, 'kpt_2d': kpt_2d})
 
-    def forward(self, x, feature_alignment=False):
+    def forward(self, x,outside_mask=None, feature_alignment=False):
+        #print(x.shape)
+        #print(x.dtype)
         x2s, x4s, x8s, x16s, x32s, xfc = self.resnet18_8s(x)
 
         fm=self.conv8s(torch.cat([xfc,x8s],1))
@@ -97,12 +104,13 @@ class Resnet18(nn.Module):
 
         if not self.training:
             with torch.no_grad():
-                self.decode_keypoint(ret)
+                self.decode_keypoint(ret,outside_mask)
 
         return ret
 
 
 def get_res_pvnet(ver_dim, seg_dim):
     model = Resnet18(ver_dim, seg_dim)
+    print('run networks/pvnet/resnet18.py-get_res_pvnet,task:%s' % (cfg.task))
     return model
 

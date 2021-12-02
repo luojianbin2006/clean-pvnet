@@ -2,7 +2,9 @@ import pycocotools.mask as mask_utils
 import numpy as np
 from plyfile import PlyData
 from PIL import Image
-
+from lib.utils import data_utils
+import cv2
+import copy
 
 def binary_mask_to_polygon(binary_mask, tolerance=0):
     polygons = []
@@ -73,3 +75,19 @@ def read_tless_mask(ann_type, path):
     elif ann_type == 'render':
         depth = np.asarray(Image.open(path))
         return (depth != 65535).astype(np.uint8)
+
+def corp_img(img,mask,kpt_2d,box,scale_ratio,output_):
+    input_h, input_w = output_
+    center = np.array([(box[0] + box[2]) / 2, (box[1] + box[3]) / 2])
+    scale = max(box[2] - box[0], box[3] - box[1]) * scale_ratio
+    trans_input = data_utils.get_affine_transform(center, scale, 0, [input_w, input_h])
+    img = img.astype(np.uint8).copy()
+    inp = cv2.warpAffine(img, trans_input, (input_w, input_h), flags=cv2.INTER_LINEAR)
+
+    trans_input_inv = data_utils.get_affine_transform(center, scale, 0, [input_w, input_h],inv=1)
+
+    mask_ = cv2.warpAffine(mask, trans_input, (input_w, input_h), flags=cv2.INTER_LINEAR)
+    kpt_2d_=copy.deepcopy(kpt_2d)
+    for i, p in enumerate(kpt_2d):
+        kpt_2d_[i] = data_utils.affine_transform(p, trans_input)
+    return inp, mask_, kpt_2d_, trans_input, trans_input_inv

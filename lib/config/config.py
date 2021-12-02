@@ -1,3 +1,4 @@
+from numpy import string_
 from yacs.config import CfgNode as CN
 import argparse
 import os
@@ -40,7 +41,7 @@ cfg.train = CN()
 
 cfg.train.dataset = 'CocoTrain'
 cfg.train.epoch = 140
-cfg.train.num_workers = 8
+cfg.train.num_workers = 1
 
 # use adam as default
 cfg.train.optim = 'adam'
@@ -146,6 +147,12 @@ def make_cfg(args):
     parse_cfg(cfg, args)
     return cfg
 
+def reInit(task,cfg_file):
+    args.type = task
+    args.cfg_file = cfg_file
+    cfg = make_cfg(args)
+    return cfg
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--cfg_file", default="configs/default.yaml", type=str)
@@ -154,6 +161,20 @@ parser.add_argument("--type", type=str, default="")
 parser.add_argument('--det', type=str, default='')
 parser.add_argument("opts", default=None, nargs=argparse.REMAINDER)
 args = parser.parse_args()
+
+
+#--type evaluate --cfg_file configs/linemod.yaml model cat cls_type cat
+
+# args.type = 'detector_pvnet'
+# args.cfg_file = 'configs/ct_linemod.yaml'
+# args.type = 'evaluate'
+# args.cfg_file = 'configs/linemod.yaml'
+
+args.type = 'mytest'
+args.cfg_file = 'configs/custom.yaml'
+
+
 if len(args.type) > 0:
     cfg.task = "run"
 cfg = make_cfg(args)
+

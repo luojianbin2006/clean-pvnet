@@ -190,7 +190,7 @@ def _tless_train_to_coco(obj_id):
     corner_3d = get_model_corners(model)
     center_3d = (np.max(corner_3d, 0) + np.min(corner_3d, 0)) / 2
     fps_3d = np.loadtxt(os.path.join(data_root, 'farthest', 'farthest_{:02}.txt'.format(obj_id)))
-
+    print('tless_to_coco:fps_3d')
     model_meta = {
         'corner_3d': corner_3d,
         'center_3d': center_3d,

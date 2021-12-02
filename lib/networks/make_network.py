@@ -25,10 +25,12 @@ def get_network(cfg):
     arch = arch[:arch.find('_')] if '_' in arch else arch
     get_model = _network_factory[arch]
     network = get_model(num_layers, heads, head_conv)
+    print('run make_network.py-get_network,task:%s'%(cfg.task))
     return network
 
 
 def make_network(cfg):
     module = '.'.join(['lib.networks', cfg.task])
     path = os.path.join('lib/networks', cfg.task, '__init__.py')
+    print('run make_network.py-make_network,task:%s' % (cfg.task))
     return imp.load_source(module, path).get_network(cfg)
